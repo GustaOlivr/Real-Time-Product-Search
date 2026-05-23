@@ -1,0 +1,29 @@
+# version: "3.9"
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: music-catalog-api
+    command: python src/manage.py runserver 0.0.0.0:8000
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    volumes:
+      - .:/app
+    depends_on:
+      - typesense
+
+  typesense:
+    image: typesense/typesense:0.25.2
+    container_name: typesense
+    command: '--data-dir /data --api-key=${TYPESENSE_API_KEY} --enable-cors'
+    ports:
+      - "8108:8108"
+    volumes:
+      - typesense_data:/data
+
+volumes:
+  typesense_data:

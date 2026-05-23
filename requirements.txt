@@ -1,0 +1,4 @@
+Django==5.1.4
+requests==2.32.3
+typesense==0.21.0
+python-dotenv==1.0.1
