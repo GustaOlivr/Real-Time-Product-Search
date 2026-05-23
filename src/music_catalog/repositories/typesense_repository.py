@@ -1,9 +1,12 @@
 import os
+import logging
 
 import typesense
 from typesense.exceptions import ObjectNotFound
 
 from music_catalog.domain.entities import Song
+
+logger = logging.getLogger(__name__)
 
 
 class TypesenseSongRepository:
@@ -39,9 +42,22 @@ class TypesenseSongRepository:
 
         try:
             self.client.collections[self.collection_name].retrieve()
+            logger.debug("Typesense collection already exists collection=%s", self.collection_name)
         except ObjectNotFound:
             self.client.collections.create(schema)
+            logger.info("Typesense collection created collection=%s", self.collection_name)
 
     def upsert_song(self, song: Song) -> dict:
         document = song.to_typesense_document()
+        logger.debug("Upserting song in Typesense song_id=%s", document["id"])
         return self.client.collections[self.collection_name].documents.upsert(document)
+
+    def search_songs(self, query: str, limit: int, page: int) -> dict:
+        logger.info("Searching songs in Typesense query=%s limit=%s page=%s", query, limit, page)
+        search_parameters = {
+            "q": query,
+            "query_by": "title,artist,album",
+            "per_page": limit,
+            "page": page,
+        }
+        return self.client.collections[self.collection_name].documents.search(search_parameters)

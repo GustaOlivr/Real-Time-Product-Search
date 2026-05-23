@@ -6,9 +6,9 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: music-catalog-api
-    command: python src/manage.py runserver 0.0.0.0:8000
+    command: python src/manage.py runserver 0.0.0.0:8012
     ports:
-      - "8000:8000"
+      - "${API_PORT:-8012}:8012"
     env_file:
       - .env
     volumes:
@@ -21,9 +21,25 @@ services:
     container_name: typesense
     command: '--data-dir /data --api-key=${TYPESENSE_API_KEY} --enable-cors'
     ports:
-      - "8108:8108"
+      - "${TYPESENSE_HOST_PORT:-8111}:8108"
     volumes:
       - typesense_data:/data
+
+  frontend:
+    image: node:20-alpine
+    container_name: music-catalog-frontend
+    working_dir: /app/frontend
+    command: sh -c "npm install && npm run dev -- --host 0.0.0.0 --port 5173"
+    env_file:
+      - .env
+    environment:
+      - VITE_API_BASE_URL=${VITE_API_BASE_URL:-http://localhost:8012/api/v1}
+    volumes:
+      - .:/app
+    ports:
+      - "${FRONTEND_PORT:-5173}:5173"
+    depends_on:
+      - api
 
 volumes:
   typesense_data:
