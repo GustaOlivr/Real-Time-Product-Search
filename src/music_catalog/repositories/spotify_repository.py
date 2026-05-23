@@ -1,9 +1,12 @@
 import base64
+import logging
 import os
 
 import requests
 
 from music_catalog.domain.entities import Song
+
+logger = logging.getLogger(__name__)
 
 
 class SpotifyHttpRepository:
@@ -14,6 +17,7 @@ class SpotifyHttpRepository:
         self.auth_url = os.getenv("SPOTIFY_AUTH_URL", "https://accounts.spotify.com/api/token")
 
     def _get_access_token(self) -> str:
+        logger.debug("Requesting Spotify access token")
         credentials = f"{self.client_id}:{self.client_secret}".encode("utf-8")
         basic_token = base64.b64encode(credentials).decode("utf-8")
 
@@ -27,9 +31,11 @@ class SpotifyHttpRepository:
             timeout=15,
         )
         response.raise_for_status()
+        logger.debug("Spotify access token fetched successfully")
         return response.json()["access_token"]
 
     def search_tracks(self, query: str, limit: int) -> list[Song]:
+        logger.info("Searching tracks on Spotify query=%s limit=%s", query, limit)
         token = self._get_access_token()
         response = requests.get(
             f"{self.base_url}/search",
@@ -40,6 +46,7 @@ class SpotifyHttpRepository:
         response.raise_for_status()
 
         tracks = response.json().get("tracks", {}).get("items", [])
+        logger.info("Spotify returned tracks query=%s count=%s", query, len(tracks))
         songs: list[Song] = []
 
         for track in tracks:
